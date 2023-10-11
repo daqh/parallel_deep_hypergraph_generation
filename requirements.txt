@@ -1,0 +1,7 @@
+snap-stanford
+torch
+torch_geometric
+scipy
+imbalanced-learn
+matplotlib
+scikit-learn
