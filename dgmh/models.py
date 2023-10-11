@@ -3,29 +3,34 @@ from torch import nn
 import torch.nn.functional as F
 from torch_geometric.nn.conv import GCNConv, HypergraphConv
 from torch_geometric.nn import VGAE
+from typing import Optional
 
 EPS = 1e-15
+MAX_LOGSTD = 10
 
 class Decoder(nn.Module):
-    '''
-    A simple decoder module for the Hyperedge Autoencoder.
-    '''
 
-    def __init__(self, in_features: int, hidden_features: int, out_features: int, sigmoid: bool = True):
+    def __init__(self, in_channels, *hidden_channels, activation=nn.LeakyReLU(), sigmoid=True, dropout=0.1):
         super(Decoder, self).__init__()
-        self.linear_1 = nn.Linear(in_features, hidden_features)
-        self.linear_2 = nn.Linear(hidden_features, hidden_features)
-        self.linear_3 = nn.Linear(hidden_features, out_features)
+        self.dropout = nn.Dropout(dropout)
+        if len(hidden_channels) == 0:
+            hidden_channels = [in_channels]
+        self.linear_0 = nn.Linear(in_channels, hidden_channels[0])
+        if len(hidden_channels) > 1:
+            self.activation_0 = activation
+        for i in range(1, len(hidden_channels)):
+            setattr(self, f"linear_{i}", nn.Linear(hidden_channels[i - 1], hidden_channels[i]))
+            setattr(self, f"activation_{i}", activation)
+        self.hidden_channels = hidden_channels
         self.sigmoid = sigmoid
 
     def forward(self, x):
-        x = self.linear_1(x)
-        x = nn.functional.leaky_relu(x)
-        x = self.linear_2(x)
-        x = nn.functional.leaky_relu(x)
-        x = self.linear_3(x)
+        x = self.linear_0(x)
+        for i in range(1, len(self.hidden_channels)):
+            x = getattr(self, f"activation_{i - 1}")(x)
+            x = getattr(self, f"linear_{i}")(x)
         if self.sigmoid:
-            x = nn.functional.sigmoid(x)
+            x = torch.sigmoid(x)
         return x
 
 class GCNEncoder(nn.Module):
@@ -48,48 +53,39 @@ class GCNEncoder(nn.Module):
         return x
 
 class HGCNEncoder(nn.Module):
-    '''
-    A Hypergraph Convolutional Encoder.
-    '''
 
-    def __init__(self, input_size: int, hidden_size: int, output_size: int, hyperedges):
+    def __init__(self, in_channels, *hidden_channels, hyperedges, activation=nn.LeakyReLU()):
         super(HGCNEncoder, self).__init__()
-        self.hconv_0 = HypergraphConv(input_size, hidden_size)
-        self.hconv_1 = HypergraphConv(hidden_size, hidden_size)
-        self.hconv_2 = HypergraphConv(hidden_size, output_size)
+        if len(hidden_channels) == 0:
+            hidden_channels = [in_channels]
+        self.hconv_0 = HypergraphConv(in_channels, hidden_channels[0])
+        if len(hidden_channels) > 1:
+            self.activation_0 = activation
+        for i in range(1, len(hidden_channels)):
+            setattr(self, f"hconv_{i}", HypergraphConv(hidden_channels[i - 1], hidden_channels[i]))
+            setattr(self, f"activation_{i}", activation)
+        self.hconv_mu = HypergraphConv(hidden_channels[-1], hidden_channels[-1])
+        self.hconv_logvar = HypergraphConv(hidden_channels[-1], hidden_channels[-1])
+        self.hidden_channels = hidden_channels
         self.hyperedges = hyperedges
 
     def forward(self, x, edge_index):
         x = self.hconv_0(x, edge_index)
-        x = F.leaky_relu(x)
-        x = self.hconv_1(x, edge_index)
-        x = F.leaky_relu(x)
-        x = self.hconv_2(x, edge_index)
-        x = torch.stack([x[torch.tensor(h) - 1].sum(dim=0) for h in self.hyperedges])
-        return x
+        for i in range(1, len(self.hidden_channels)):
+            x = getattr(self, f"activation_{i - 1}")(x)
+            x = getattr(self, f"hconv_{i}")(x, edge_index)
+        mu = self.hconv_mu(x, edge_index)
+        logvar = self.hconv_logvar(x, edge_index)
+        mu = torch.stack([mu[torch.tensor(h) - 1].sum(dim=0) for h in self.hyperedges])
+        logvar = torch.stack([logvar[torch.tensor(h) - 1].sum(dim=0) for h in self.hyperedges])
+        return mu, logvar
 
 class HyperedgeAutoEncoder(nn.Module):
-    '''
-    A Hyperedge Autoencoder.
-    '''
 
     def __init__(self, encoder: nn.Module, decoder: nn.Module):
         super(HyperedgeAutoEncoder, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
-
-    def forward(self, Z, edge_index):
-        x = self.encode(Z, edge_index)
-        x = self.decode(x)
-        return x
-
-    def encode(self, Z, edge_index):
-        x = self.encoder(Z, edge_index)
-        return x
-
-    def decode(self, Z):
-        x = self.decoder(Z)
-        return x
 
     def recon_loss(self, X_, positive_nodes, negative_nodes):
 
@@ -100,6 +96,40 @@ class HyperedgeAutoEncoder(nn.Module):
         reconstruction_loss = positive_loss + negative_loss
 
         return reconstruction_loss
+
+    def forward(self, Z, edge_index):
+        x = self.encode(Z, edge_index)
+        x = self.decode(x)
+        return x
+    
+    @property
+    def mu(self) -> torch.Tensor:
+        return self.__mu__
+    
+    @property
+    def logstd(self) -> torch.Tensor:
+        return self.__logstd__
+
+    def decode(self, *args, **kwargs) -> torch.Tensor:
+        return self.decoder(*args, **kwargs)
+
+    def encode(self, *args, **kwargs) -> torch.Tensor:
+        self.__mu__, self.__logstd__ = self.encoder(*args, **kwargs)
+        self.__logstd__ = self.__logstd__.clamp(max=MAX_LOGSTD)
+        z = self.reparametrize(self.__mu__, self.__logstd__)
+        return z
+
+    def reparametrize(self, mu: torch.Tensor, logstd: torch.Tensor) -> torch.Tensor:
+        if self.training:
+            return mu + torch.randn_like(logstd) * torch.exp(logstd)
+        else:
+            return mu
+
+    def kl_loss(self, mu: Optional[torch.Tensor] = None, logstd: Optional[torch.Tensor] = None) -> torch.Tensor:
+        mu = self.__mu__ if mu is None else mu
+        logstd = self.__logstd__ if logstd is None else logstd.clamp(max=MAX_LOGSTD)
+        return -0.5 * torch.mean(torch.sum(1 + 2 * logstd - mu**2 - logstd.exp()**2, dim=1))
+    
 
 class HyperedgeSizeDecisionModule(nn.Module):
     '''
