@@ -26,7 +26,7 @@ python3 generate.py --dataset "email-Eu" -n 25027 --processes 32
 
 The generated hypergraph can be found in the *generated* folder.
 
-## Training Pipe
+### Training Pipe
 
 ```bash
 python3 train.py --dataset "email-Eu" -epochs 250 --device "cuda"
