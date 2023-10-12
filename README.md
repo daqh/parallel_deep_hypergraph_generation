@@ -10,8 +10,6 @@ Implementation of the tools described in the thesis work in computer science "Mo
 
 ## How to Use
 
-
-
 ### Generation Workflow
 
 The hypergraph generation process can be performed by running the following command from the console. The parameters accepted by the command are:
@@ -40,3 +38,7 @@ python3 analyze.py --dataset "email-Eu" -k 2    # Edge-level
 python3 analyze.py --dataset "email-Eu" -k 3    # Triangle-level
 python3 analyze.py --dataset "email-Eu" -k 4    # 4clique-level
 ```
+
+## Model Architecture
+
+![Model Architecture](/assets/architecture.png "Model Architecture")
