@@ -93,13 +93,13 @@ def analyze_degrees(nodes, edges, filename):
     degreeList = [len(v) for v in adjlist.values()]
     degrees, freq = np.unique(degreeList, return_counts=True)
     
-    with open("./results/{}_decomposition_degrees.txt".format(filename), "w") as f:
+    with open("./results/generated.{}_decomposition_degrees.txt".format(filename), "w") as f:
         for _x, _y in zip(degrees, freq):
             f.write(f'{_x} {_y}\n')
     
     start_idx = int(degrees[0] == 0)
     logAnalysis(degrees[start_idx:], freq[start_idx:],
-                      "./plots/{}_decomposition_degrees.png".format(filename),
+                      "./plots/generated.{}_decomposition_degrees.png".format(filename),
                       "Degree", "Count", "Degrees")    
 
 def analyze_singluar_values(nodes, edges, rank, filename):
@@ -118,14 +118,14 @@ def analyze_singluar_values(nodes, edges, rank, filename):
     _1, s, _2 = svds(incident_matrix.tocsc(), k=rank)
     s = sorted(s, reverse=True)
     
-    with open("./results/{}_decomposition_singluar_values.txt".format(filename), "w") as f:
+    with open("./results/generated.{}_decomposition_singular_values.txt".format(filename), "w") as f:
         for _x, _y in zip(np.arange(1,len(s)+1), s):
             f.write(f'{_x} {_y}\n')
             
     logAnalysis(np.arange(1,len(s)+1), s,
-                      "./plots/{}_decomposition_singular_values.png".format(filename),
+                      "./plots/generated.{}_decomposition_singular_values.png".format(filename),
                       "Rank", "Singular value", "Distribution of Singular Values")
-    
+
 def analyze_diameter(nodes, edges):
     G = snap.TUNGraph.New()
     idxs = {}
