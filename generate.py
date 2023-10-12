@@ -68,6 +68,6 @@ if __name__ == "__main__":
     parser.add_argument("--processes", type=int, default=1, help="Number of processes to use.")
     args = parser.parse_args()
 
-    dataset_name, device, processes, n = args.dataset, args.device, args.processes. args.n
+    dataset_name, device, processes, n = args.dataset, args.device, args.processes, args.n
 
     main(n, dataset_name, processes, device)
