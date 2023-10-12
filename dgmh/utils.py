@@ -36,7 +36,6 @@ def load_dataset(dataset_name: str) -> list[list[int]]:
 
 def compute_edge_index(hyperedges: list[int]):
     edge_index = [[], []]
-    edge_index = [[], []]
     for i, hyperedge in enumerate(hyperedges):
         for node in hyperedge:
             edge_index[0].append(node - 1)
