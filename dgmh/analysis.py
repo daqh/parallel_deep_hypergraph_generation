@@ -159,8 +159,7 @@ def analyze_k_decomposition(hyperedges, k, dataset_name):
 
     analyze_gcc(projected_nodes, projected_edges)
     analyze_triangles(projected_nodes, projected_edges)
-    if k <= 3:
-        analyze_degrees(projected_nodes, projected_edges, f"{dataset_name}_{k}")
-        analyze_singluar_values(projected_nodes, projected_edges, 500, f"{dataset_name}_{k}")
+    analyze_degrees(projected_nodes, projected_edges, f"{dataset_name}_{k}")
+    analyze_singluar_values(projected_nodes, projected_edges, 500, f"{dataset_name}_{k}")
     analyze_diameter(projected_nodes, projected_edges)
     print("")
