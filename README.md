@@ -4,9 +4,9 @@ Implementation of the tools described in the thesis work in computer science "Mo
 
 ## Content
 
-- Generative Workflow
-- Training Pipe
-- Hypergraph Analysis Tool
+- [Generative Workflow](#generation-workflow)
+- [Training Pipe](#training-pipe)
+- [Hypergraph Analysis Tool](#hypergraph-analysis-tool)
 
 ## How to Use
 
@@ -31,6 +31,8 @@ python3 train.py --dataset "email-Eu" -epochs 250 --device "cuda"
 ```
 
 ### Hypergraph Analysis Tool
+
+the project includes an analysis tool for the generated hypergraphs. In particular it is useful for producing results relating to the following structural patterns of hypergraph decompositions: *Giant Connected Component*, *Clustering Coefficient*, *Effective Diameter*, *Number of Closed Triangles*, *Singular Value Distribution*, *Degree Distribution*.
 
 ```bash
 python3 analyze.py --dataset "email-Eu" -k 1    # Node-level analysis
