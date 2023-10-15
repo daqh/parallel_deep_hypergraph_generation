@@ -21,12 +21,11 @@ def main(n, dataset_name: str, processes: int, device: str):
     hyperedge_sizes = nn.functional.one_hot(hyperedge_sizes).type(torch.float32)
     max_hyperedge_size = hyperedge_sizes.shape[1]
 
-    autoencoder = HyperedgeAutoEncoder(HGCNEncoder(num_nodes, 2048, 1024, 512, 256, 64, hyperedges=hyperedges), Decoder(64, 4096, 2048, 2048, 4096, num_nodes, sigmoid=True, dropout=0.1)).to(device)
-    autoencoder.load_state_dict(torch.load(f'models/{dataset_name}.autoencoder.pth'));
+    autoencoder: HyperedgeAutoEncoder = torch.load(f'models/{dataset_name}.autoencoder.pt')
     autoencoder.eval()
 
     hsdm = HyperedgeSizeDecisionModule(num_nodes, 512, 512, max_hyperedge_size)
-    hsdm.load_state_dict(torch.load(f'models/{dataset_name}.hyperedge_size_decision_module.pth'));
+    hsdm.load_state_dict(torch.load(f'models/{dataset_name}.hyperedge_size_decision_module.pt'));
     hsdm.eval()
 
     print()
@@ -39,10 +38,7 @@ def main(n, dataset_name: str, processes: int, device: str):
     y = y.to(device)
     edge_index = edge_index.to(device)
 
-    with torch.inference_mode():
-        encoded = autoencoder.encode(nodes_one_hot, edge_index)
-
-    Z = torch.randn(n, 64) * encoded.std(dim=0) + encoded.mean(dim=0)
+    Z = torch.randn(n, 64) * autoencoder.logstd + autoencoder.mu
 
     begin = time()
     hyperedges = DGMH(autoencoder.decoder, hsdm, Z, processes)
