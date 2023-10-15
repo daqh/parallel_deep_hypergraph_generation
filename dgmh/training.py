@@ -5,8 +5,9 @@ from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 from imblearn.over_sampling import RandomOverSampler
 from dgmh.utils import compute_embeddings, compute_edge_index
 import matplotlib.pyplot as plt
+from dgmh.models import HyperedgeAutoEncoder
 
-def train_models(autoencoder: nn.Module, hsdm: nn.Module, hyperedges, epochs: int, device: str):
+def train_models(autoencoder: HyperedgeAutoEncoder, hsdm: nn.Module, hyperedges, epochs: int, device: str):
     nodes_one_hot, X, y = compute_embeddings(hyperedges)
     edge_index = compute_edge_index(hyperedges)
 
@@ -29,15 +30,6 @@ def train_models(autoencoder: nn.Module, hsdm: nn.Module, hyperedges, epochs: in
 
         encoded = autoencoder.encode(nodes_one_hot, edge_index)
         decoded = autoencoder.decode(encoded)
-
-        autoencoder.eval()
-        s = 0
-        for a, h in zip(decoded, hyperedges):
-            cat = torch.distributions.Categorical(torch.softmax(a * 200, dim=0))
-            node = cat.sample()
-            if node + 1 in h:
-                s += 1
-        autoencoder.train()
 
         reconstruction_loss = autoencoder.recon_loss(decoded, train_pos_nodes, neg_nodes)
         kl_loss = 1 / X.size(0) * autoencoder.kl_loss()
@@ -62,7 +54,7 @@ def train_models(autoencoder: nn.Module, hsdm: nn.Module, hyperedges, epochs: in
             ap = average_precision_score(y_true.detach().cpu().numpy(), y_pred.detach().cpu().numpy())
             roc_auc = roc_auc_score(y_true.detach().cpu().numpy(), y_pred.detach().cpu().numpy())
 
-            print(f"Epoch {epoch + 1}/{epochs} - Loss: {loss.item()} - Sampled {s} nodes correctly - AP: {ap} - ROC-AUC: {roc_auc}")
+            print(f"Epoch {epoch + 1}/{epochs} - Loss: {loss.item()} - AP: {ap} - ROC-AUC: {roc_auc}")
 
     autoencoder.eval()
     hsdm.train()
@@ -90,4 +82,4 @@ def train_models(autoencoder: nn.Module, hsdm: nn.Module, hyperedges, epochs: in
             with torch.inference_mode():
                 pred = hsdm(X_test)
                 f1 = f1_score(y_test.argmax(dim=1).detach().cpu().numpy(), pred.argmax(dim=1).detach().cpu().numpy(), average='weighted')
-                print(f'Epoch {epoch+1}/{epochs} {loss.item()} - F1 score: {f1}')
+                print(f'Epoch {epoch+1}/{epochs * 2} {loss.item()} - F1 score: {f1}')

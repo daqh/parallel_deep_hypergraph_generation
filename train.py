@@ -21,8 +21,8 @@ def main(dataset_name, device, epochs: int):
     hsdm = HyperedgeSizeDecisionModule(num_nodes, 512, 512, max_hyperedge_size)
 
     train_models(autoencoder, hsdm, hyperedges, epochs, device)
-    torch.save(autoencoder.state_dict(), f"models/{dataset_name}.autoencoder.pth")
-    torch.save(hsdm.state_dict(), f"models/{dataset_name}.hyperedge_size_decision_module.pth")
+    torch.save(autoencoder, f"models/{dataset_name}.autoencoder.pt")
+    torch.save(hsdm.state_dict(), f"models/{dataset_name}.hyperedge_size_decision_module.pt")
 
 if __name__ == "__main__":
     torch.multiprocessing.set_sharing_strategy('file_descriptor')
