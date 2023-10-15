@@ -4,8 +4,6 @@ from torch import nn
 from dgmh import DGMH
 from dgmh.models import Decoder, HGCNEncoder, HyperedgeAutoEncoder, HyperedgeSizeDecisionModule
 from dgmh.utils import load_dataset
-from dgmh.training import train_models
-from dgmh.analysis import analyze_k_decomposition
 from dgmh.utils import compute_embeddings, compute_edge_index
 from time import time
 
