@@ -37,7 +37,7 @@ def main(n, dataset_name: str, processes: int, device: str):
     edge_index = edge_index.to(device)
 
     with torch.inference_mode():
-        Z = torch.randn(n, 64) * autoencoder.logstd + autoencoder.mu
+        Z = torch.randn(n, 64) * autoencoder.logstd.mean(dim=0) + autoencoder.mu.mean(dim=0)
 
     begin = time()
     hyperedges = DGMH(autoencoder.decoder, hsdm, Z, processes)
