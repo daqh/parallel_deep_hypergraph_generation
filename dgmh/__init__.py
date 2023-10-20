@@ -4,6 +4,22 @@ from time import time
 import os, psutil
 
 def generate_hyperedge(args):
+    '''Generate a new hyperedge using the trained model.
+    
+    decoder: nn.Module
+        Trained decoder module
+    F: nn.Module
+        Trained representation learning module
+    A: nn.Module
+        Trained hyperedge size decision module
+    Z_i: torch.Tensor
+        Encoded hyperedge
+
+    Returns
+    -------
+    hyperedge: list[int]
+        List of nodes in the hyperedge
+    '''
     decoder, A, z = args
     X_i = decoder(z) # X_i = f(F(Z_i))
     k = torch.argmax(A(X_i.view(1, -1)), dim=1).item() + 1
@@ -14,7 +30,8 @@ def generate_hyperedge(args):
     return hyperedge
 
 def DGMH(decoder: nn.Module, A:nn.Module, Z: torch.Tensor, processes: int = 1):
-    '''
+    '''Generate a new hypergraph using the trained model.
+
     decoder: nn.Module
         Trained decoder module
     F: nn.Module
