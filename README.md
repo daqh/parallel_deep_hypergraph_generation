@@ -1,7 +1,5 @@
 ![Header Image](assets/header_image.png "parallel deep hypergraph generation")
 
-# Parallel Deep Hypergraph Generation
-
 Implementation of the tools described in the thesis work in computer science "Modelli Generativi per Ipergrafi mediante l'Utilizzo di Tecniche di Deep Learning".
 
 ## Content
