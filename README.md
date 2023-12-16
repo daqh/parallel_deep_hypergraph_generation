@@ -1,12 +1,16 @@
+![Header Image](assets/header_image.png "parallel deep hypergraph generation")
+
 # Parallel Deep Hypergraph Generation
 
 Implementation of the tools described in the thesis work in computer science "Modelli Generativi per Ipergrafi mediante l'Utilizzo di Tecniche di Deep Learning".
 
 ## Content
 
-- [Generative Workflow](#generation-workflow)
-- [Training Pipe](#training-pipe)
-- [Hypergraph Analysis Tool](#hypergraph-analysis-tool)
+- [How to Use](#how-to-use)
+    - [Generative Workflow](#generation-workflow)
+    - [Training Pipe](#training-pipe)
+    - [Hypergraph Analysis Tool](#hypergraph-analysis-tool)
+- [Model Architecture](#model-architecture)
 
 ## How to Use
 
